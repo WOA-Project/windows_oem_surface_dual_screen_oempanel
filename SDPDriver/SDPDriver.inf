@@ -51,7 +51,6 @@ Copyfiles = OEMCopyFiles
 
 [OEMCopyFiles]
 SDPDriver.sys
-SDPDriverTi.sys
 
 [OEM_Inst.NT.Services]
 AddService = SurfacePanel, %SPSVCINST_ASSOCSERVICE%, OEM_Service_Inst
