@@ -38,10 +38,13 @@ ExcludeFromSelect = *
 ;*****************************************
 
 [Manufacturer]
-%Manufacturer_Name% = CompanyName, NT$ARCH$.10.0...19041
+%Manufacturer_Name% = CompanyName, NT$ARCH$.10.0...16299, NT$ARCH$.10.0...19041
+
+[CompanyName.NT$ARCH$.10.0...16299]
+%OEM.DeviceDesc% = OEM_Inst, ACPI\MSHW0160
 
 [CompanyName.NT$ARCH$.10.0...19041]
-%OEM.DeviceDesc% = OEM_Inst, ACPI\MSHW0160
+; Do nothing, because this package is intended for RS3-TI
 
 [OEM_Inst.NT]
 Copyfiles = OEMCopyFiles

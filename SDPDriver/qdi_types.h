@@ -9,7 +9,7 @@
 
 Common definitions header file. Providing common structures needed for QDI 2.0x Interface.
 
-Copyright (c) 2010-2020 Qualcomm Technologies, Inc.  
+Copyright (c) 2010-2018 Qualcomm Technologies, Inc.  
 All Rights Reserved.
 =============================================================================*/
 
@@ -415,8 +415,6 @@ typedef enum
   QDI_COLOR_ENCODING_REC709,      /** ITU-R BT.709 (CCIR709)                     */
   QDI_COLOR_ENCODING_sRGB,        /** Standard RGB                               */
   QDI_COLOR_ENCODING_REC2020,     /** ITU-R BT.2020 (CCIR2020)                   */
-  QDI_COLOR_ENCODING_scRGB,       /** Standard scRGB                             */
-  QDI_COLOR_ENCODING_HDR10,       /** ITU-R BT.2020 (CCIR2020)+SMPTE ST2084 (PQ) */
   QDI_COLOR_ENCODING_MAX,
   QDI_COLOR_ENCODING_FORCE_32BIT = 0x7FFFFFFF
 } QDI_Color_EncodingType;
@@ -560,8 +558,6 @@ typedef enum
   QDI_PIXEL_FORMAT_CAP_A5X_MACRO_TILE               = 0x00000004,    /**< Flag that is used to inform QDI client whether the A5X macro tile pixel format is supported*/
   QDI_PIXEL_FORMAT_CAP_BWC                          = 0x00000100,    /**< Flag that is used to inform QDI client whether the BWC (bandwidth compression) is supported for pixel format*/
   QDI_PIXEL_FORMAT_CAP_UBWC                         = 0x00000200,    /**< Flag that is used to inform QDI client whether the UBWC (universal bandwidth compression) is supported for pixel format*/
-  QDI_PIXEL_FORMAT_CAP_HSYNC_LINEAR                 = 0x00000400,    /**< Flag that is used to inform QDI client whether the hsync flip on Linear surface is supported for the pixel format */
-  QDI_PIXEL_FORMAT_CAP_HSYNC_UBWC                   = 0x00000800,    /**< Flag that is used to inform QDI client whether the hsync flip on UBWC surface is supported for the pixel format */
   QDI_PIXEL_FORMAT_CAP_FORCE_32BIT                  = 0x7FFFFFFF
 }QDI_PixelFormatCapType;
 
@@ -1362,14 +1358,6 @@ typedef enum
   QDI_DEVICE_VERSION_08_03,       /**< Device 8.03 */
   QDI_DEVICE_VERSION_08_04,       /**< Device 8.04 */
   QDI_DEVICE_VERSION_08_05,       /**< Device 8.05 */
-  QDI_DEVICE_VERSION_09_00,       /**< Device 9.00 */
-  QDI_DEVICE_VERSION_09_01,       /**< Device 9.01 */
-  QDI_DEVICE_VERSION_09_02,       /**< Device 9.02 */
-  QDI_DEVICE_VERSION_09_03,       /**< Device 9.03 */
-  QDI_DEVICE_VERSION_09_04,       /**< Device 9.04 */
-  QDI_DEVICE_VERSION_09_05,       /**< Device 9.05 */
-  QDI_DEVICE_VERSION_10_75,       /**< Device 10.75 */
-  QDI_DEVICE_VERSION_11_99,       /**< Device 11.99 */
   QDI_DEVICE_VERSION_MAX,
   QDI_DEVICE_VERSION_FORCE_32BIT = 0x7FFFFFFF
 }QDI_Device_VersionType;
@@ -1676,9 +1664,6 @@ typedef struct
   QDI_PartialUpdateCapType      ePartialUpdateSupport;      /**< Indicates if the display can support partial update feature */
   uint32                        uMaxDestUpScaleRatio;       /**< Indicate maximum upscale supported on the destination scaler */
   uint32                        uMaxDestDownScaleRatio;     /**< Indicate maximum downscale supported on the destination scaler */
-  uint32                        uMaxNumMetadata;            /**< Indicates maximum number of metadata formats simultaneously supported on this display */
-  uint32                        uMaxMetadataSize;           /**< Indicates maximum size of metadata supported per format on this display in bytes */
-  uint32                        uPCCCoefficients;           /**< Indicates the maximum number of polynomial color correction coefficients supported on this display */
 } QDI_Display_CapsType;
 
 /*!
@@ -1815,13 +1800,10 @@ typedef struct
   QDI_WireFormatType                eWireFormat;                                        /**< List of supported wire formats */
   uint32                            uMaxLuminance;                                      /**< Maximum luminance of the display in millinits (1/1000 of a nit) */
   uint32                            uMinLuminance;                                      /**< Minimum luminance of the display in millinits (1/1000 of a nit) */  
-  uint32                            uMaxFullFrameAvgLuminance;                          /**< Maximum full frame average luminance of the display in millinits (1/1000 of a nit) */  
   QDI_Display_BrightnessCapsType    sBrightnessCaps;                                    /**< Advanced brightness configuration of the display */
   uint32                            uPhysicalPortID;                                    /**< Physical port index for external display connect */
   uint32                            uStreamID;                                          /**< Stream index for the physical port */
   QDI_Display_ChromaticityInfoType  sChromaticityInfo;                                  /**< Chromaticity coordinates of the display */
-  uint32                            uNumberOfInterfaces;                                /**< Number of interfaces associated with the display */
-  QDI_Color_EncodingType            eColorBlendSpace;                                   /**< Supported color space by the display other than sRGB (sRGB is implicitly supported by the display) */
 } QDI_Display_InfoType;
 
 /*!
@@ -1990,9 +1972,6 @@ typedef enum
                                                           Usage of the QDI_DISPLAY_PROPERTY_BRIGHTNESS and QDI_DISPLAY_PROPERTY_BACKLIGHT are mutually exclusive.*/   
   QDI_DISPLAY_PROPERTY_PROGRAMMABLE_LINE_INTERRUPT,  /**< Configure programmable line interrupts */
   QDI_DISPLAY_PROPERTY_ROUTING_INFO,                 /**< Return routing info i.e. controller id, stream id */
-  QDI_DISPLAY_PROPERTY_METADATA,                     /**< Configure metadata sent on a display. */
-  QDI_DISPLAY_PROPERTY_BLEND_SPACE,                  /**< Set/Get display blend space. */
-  QDI_DISPLAY_PROPERTY_PCC,                          /**< Set polynomial color correction matrix. */
   QDI_DISPLAY_PROPERTY_MAX,
   QDI_DISPLAY_PROPERTY_FORCE_32BIT = 0x7FFFFFFF
 } QDI_Display_PropertyType;
@@ -2027,40 +2006,6 @@ typedef struct
   uint8* pBlueCb;     /**< Pointer to the gamma table blue entry. All inputs are byte aligned. */ 
 } QDI_Display_GammaControlPropType;
 
-/*!
-* \b QDI_Display_PCCPropType
-*
-*  Controls the PCC block configuration.
-*  It will also provide the polynomial color correction(PCC) matrix
-*  which will be used for panel calibration.
-*/
-typedef struct
-{
-  bool32 bEnabled;          /**< Enable PCC */
-  float  fCCMatrix[3][11];  /**< Color correction matrix. */
-  /**<
-  Color correction matrix -- Passes the color correction coefficients
-         in the panel color correction buffer in order.
-
-         @note1 Any changes to the panel color correction order yields unpredictable results.
-
-         Color coefficient indexes are defined as follows:
-         - Index 0 -- Red color coefficients
-         - Index 1 -- Green color coefficients
-         - Index 2 -- Blue color coefficients
-            - R' = a00 + a01 R + a02 G + a03 B + a04 R*G +
-                                   a05 G*B + a06 B*R + a07 R*R + a08 G*G + a09 B*B + a010 R*G*B
-            - G' = a10 + a11 R + a12 G + a13 B + a14 R*G +
-                                   a15 G*B + a16 B*R + a17 R*R + a18 G*G + a19 B*B + a110 R*G*B
-            - B' = a20 + a21 R + a22 G + a23 B + a24 R*G +
-                                   a25 G*B + a26 B*R + a27 R*R + a28 G*G + a29 B*B + a210 R*G*B
-
-              where a          = pcc matrix, 
-                    R, G, B    = input pixels
-                    R', G', B' = output pixels after applying PCC.
-  */
-
-} QDI_Display_PCCPropType;
 
 /*!
 * \b QDI_Display_VSyncPropType
@@ -2755,50 +2700,6 @@ typedef enum
 } QDI_Display_HDCPLevelType;
 
 /*!
-* \b QDI_Display_MetadataActionType
-*
-*  Defines an action to take on a metadata format on a display.
-*/
-typedef enum
-{
-  QDI_DISPLAY_METADATA_ACTION_SET         = 0x0,   /**< Set new metadata for a format */
-  QDI_DISPLAY_METADATA_ACTION_CLEAR       = 0x1,   /**< Send no metadata for a format */
-  QDI_DISPLAY_METADATA_ACTION_MAX         = 0x2,
-  QDI_DISPLAY_METADATA_ACTION_FORCE_32BIT = 0x7FFFFFFF,
-} QDI_Display_MetadataActionType;
-
-/*!
-* \b QDI_Display_HDR10Metadata_InfoType
-*
-*  Defines HDR10 Metadata definition.
-*/
-typedef struct
-{
-  QDI_Display_ChromaticityInfoType       sChromaticityInfo;            /**< Red, Green, Blue and White point chromaticity coordinates */
-  uint32                                 uMaxMasteringLuminance;       /**< The maximum number of millinits (1/1000 of a nit) of the display used to master the content */
-  uint32                                 uMinMasteringLuminance;       /**< The minimum number of millinits (1/1000 of a nit) of the display used to master the content */
-  uint32                                 uMaxContentLightLevel;        /**< The maximum light level (MaxCLL) in millinits (1/1000 of a nit) corresponding to the brightest pixel in the content */
-  uint32                                 uMaxFrameAverageLightLevel;   /**< The maximum frame average light level (MaxFALL) in millinits (1/1000 of a nit) for any single frame  which has the brightest average luminance in the content*/
-} QDI_Display_HDR10Metadata_InfoType;
-
-/*!
-* \b QDI_Display_MetadataFormatType
-*
-*  Defines the format of metadata. (HDR, Proprietary, etc.)
-*/
-typedef enum
-{
-  QDI_DISPLAY_METADATA_FORMAT_UNDEFINED        = 0x0,         /**< Undefined metadata format */
-  QDI_DISPLAY_METADATA_FORMAT_HDR10            = 0x1,         /**< HDR10 metadata format used with QDI_Display_HDR10Metadata_InfoType */
-  QDI_DISPLAY_METADATA_FORMAT_HDR10PLUS        = 0x2,         /**< HDR10PLUS metadata format */
-  QDI_DISPLAY_METADATA_FORMAT_PROPRIETARY_SDP0 = 0x3,         /**< Proprietary SDP 0 metadata format */
-  QDI_DISPLAY_METADATA_FORMAT_PROPRIETARY_SDP1 = 0x4,         /**< Proprietary SDP 1 metadata format */
-  QDI_DISPLAY_METADATA_FORMAT_PROPRIETARY_SDP2 = 0x5,         /**< Proprietary SDP 2 metadata format */
-  QDI_DISPLAY_METADATA_FORMAT_MAX              = 0x6,
-  QDI_DISPLAY_METADATA_FORMAT_FORCE_32BIT      = 0x7FFFFFFF,
-} QDI_Display_MetadataFormatType;
-
-/*!
 * \b QDI_Display_HDCP_InfoType
 *
 *  Defines HDCP details of a device connected to the protected interface port.
@@ -2909,33 +2810,6 @@ typedef struct
 } QDI_Display_RoutingType;
 
 /*!
-* \b QDI_Display_MetadataConfigPropType
-*
-* Defines the configuration for a metadata format on a QDI Display.
-*/
-typedef struct
-{
-  QDI_Display_MetadataActionType  eAction;       /**< Action to take on a metadata format */
-  QDI_Display_MetadataFormatType  eFormat;       /**< Format of this metadata (HDR, proprietary) */
-  uint32                          uInterfaceId;  /**< Bitmask of the display interfaces to send metadata on, if more than one interface is used for display.
-                                                      If 0, then metadata is broadcast to all interfaces. Bit 0 is interface 0, and so on. */
-  uint32                          uMetadataSize; /**< Size of metadata in bytes */
-  uint8                          *puMetadata;    /**< Metadata buffer */
-} QDI_Display_MetadataConfigPropType;
-
-/*!
-* \b QDI_Display_MetadataListPropType
-*
-* Defines the configuration of metadata formats on a QDI Display.
-* The metadata is persistent until configuration is changed.
-*/
-typedef struct
-{
-  QDI_Display_MetadataConfigPropType  *psConfigs;         /**< Metadata configuration list */
-  uint32                               uNumberOfConfigs;  /**< Number of metadata configurations in list */
-} QDI_Display_MetadataListPropType;
-
-/*!
 * \b QDI_Display_PropertyParamsType
 *
 *  Defines the union of all the types  used for GetProperty and SetProperty
@@ -2948,7 +2822,6 @@ typedef union
   bool32                                         bPowerOn;              /**< QDI_DISPLAY_PROPERTY_POWER */
   uint32                                         uBackLightLevel;       /**< QDI_DISPLAY_PROPERTY_BACKLIGHT */
   QDI_Display_GammaControlPropType               sGammaControlParams;   /**< QDI_DISPLAY_PROPERTY_GAMMA_CORRECTION */
-  QDI_Display_PCCPropType                        sPCCParams;            /**< QDI_DISPLAY_PROPERTY_PCC */
   QDI_RotateFlipType                             eRotateFlip;           /**< QDI_DISPLAY_PROPERTY_ROTATION */
   QDI_Display_VSyncPropType                      sVsyncParam;           /**< QDI_DISPLAY_PROPERTY_VSYNC */
   uint32                                         uLineCount;            /**< QDI_DISPLAY_PROPERTY_GETSCANLINE */
@@ -2988,8 +2861,6 @@ typedef union
   QDI_Display_BrightnessPropType                 sBrightnessConfig;     /**< QDI_DISPLAY_PROPERTY_BRIGHTNESS_CONFIG */
   QDI_Display_ProgrammableLineInterruptType      sLineInterruptConfig;  /**< QDI_DISPLAY_PROPERTY_PROGRAMMABLE_LINE_INTERRUPT */
   QDI_Display_RoutingType                        sRoutingInfo;          /**< QDI_DISPLAY_PROPERTY_ROUTING_INFO */
-  QDI_Display_MetadataListPropType               sMetadataList;         /**< QDI_DISPLAY_PROPERTY_METADATA */
-  QDI_Color_EncodingType                         eColorBlendSpace;      /**< QDI_DISPLAY_PROPERTY_BLEND_SPACE */
 } QDI_Display_PropertyParamsType;
 
 
@@ -3086,7 +2957,6 @@ typedef enum
   QDI_LAYER_PROPERTY_MULTIPIPE,                           /**< Used to link multiple layers and virtualize them into one layer for large resolution output and large surface support. */
   QDI_LAYER_PROPERTY_PARTIAL_UPDATE_RECTANGLE,            /**< Used for specifying the partial update rectangle region within the source or destination rectangle.*/
   QDI_LAYER_PROPERTY_CRC,                                 /**< Used for getting the layer CRC value. */
-  QDI_LAYER_PROPERTY_SDRWHITE_LEVEL,                      /**< Used for setting SDR white level specified in millinits (1/1000 of a nit) */
   QDI_LAYER_PROPERTY_MAX,
   QDI_LAYER_PROPERTY_FORCE_32BIT = 0x7FFFFFFF
 } QDI_Layer_PropertyType;
@@ -3312,7 +3182,6 @@ typedef union
   QDI_Layer_MultiPipePropType                sMultiPipeParams;           /**< QDI_LAYER_PROPERTY_MULTIPIPE */
   QDI_Layer_PartialUpdateRectPropType        sPartialUpdateRectParams;   /**< QDI_LAYER_PROPERTY_PARTIAL_UPDATE_RECTANGLE */
   QDI_Layer_CrcPropType                      sCrcParams;                 /**< QDI_LAYER_PROPERTY_CRC */
-  uint32                                     uSDRWhiteLevel;             /**< QDI_LAYER_PROPERTY_SDRWHITE_LEVEL */
 } QDI_Layer_PropertyParamsType;
 
 
