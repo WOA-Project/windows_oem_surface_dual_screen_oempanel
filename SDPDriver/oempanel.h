@@ -36,6 +36,11 @@ DEFINE_GUID(GUID_DEVINTERFACE_OEM_BRIDGE_DRIVER, 0xced8991e, 0xad1b, 0x44c7, 0xa
 #define IOCTL_OEMPANEL_FUNCTION_CODE_BASE             0x1000
 
 //
+// OEM Panel driver IOCTL Function Query Interface Table Code
+//
+#define IOCTL_OEMPANEL_FUNCTION_QUERY_INTF_TABLE      IOCTL_OEMPANEL_FUNCTION_CODE_BASE
+
+//
 // Maximum data object count which are defined for
 // Type-C power delivery Vender defined messages
 //

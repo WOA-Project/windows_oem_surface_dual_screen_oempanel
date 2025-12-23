@@ -18,7 +18,7 @@ NOTE: The @brief description above does not appear in the PDF.
 ===========================================================================*/
 
 /*===========================================================================
-Copyright (c) 2012-2020 Qualcomm Technologies, Inc.
+Copyright (c) 2012-2018 Qualcomm Technologies, Inc.
 All rights reserved.
 ===========================================================================*/
 
@@ -230,15 +230,6 @@ extern "C" {
 /** @} */ /* end_addtogroup constants_macros */
 /** @endcond */
 
-/** Max number of pre-emphasis & voltage-swing over-ride config values */
-#define QDI_PANEL_DP_PESWLIST_MAX_NUM                         10
-
-/** Statically define max metadata that a panel can cache before a commit */
-#define QDI_PANEL_MAX_CACHED_METADATA_CONFIGURATIONS          4
-
-/* Statically define maximum metadata size that a panel can cache before a commit */
-#define QDI_PANEL_MAX_CACHED_METADATA_SIZE                    36
-
 /** @addtogroup data_types_qdi
 @{ */
 /* -----------------------------------------------------------------------
@@ -272,8 +263,6 @@ typedef enum
                                          command. */
   QDI_PANEL_BACKLIGHTTYPE_ACPI,     /**< Backlight is controlled through the
                                          ACPI method. */  
-  QDI_PANEL_BACKLIGHTTYPE_AUX,      /**< Backlight is controlled through DP using
-                                         AUX commands. */  
   QDI_PANEL_BACKLIGHTTYPE_MAX,      /**< Enumeration marker for the max. */
   QDI_PANEL_BACKLIGHTTYPE_FORCE_32BIT = 0x7FFFFFFF /**< Forces the enumeration
                                                         to 32 bits. */
@@ -888,15 +877,8 @@ typedef enum
   QDI_PANEL_FLAG_DISABLE_MST               = 0x00080000,
   /**< Flag to disable Multi Stream Transport (MST) */
 
-  QDI_PANEL_FLAG_ENABLE_PANEL_OVERRIDE     = 0x00100000,
-  /**< Flag to override panel parameters (EDID, link settings, etc) with the corresponding parameters specified in XML/ACPI configuration */
-
-  QDI_PANEL_FLAG_STRICT_EDID_CHECK         = 0x00200000,
+  QDI_PANEL_FLAG_STRICT_EDID_CHECK         = 0x00100000,
   /**< Flag to enforce strict EDID check            */
-
-  QDI_PANEL_FLAG_DISABLE_PCC_MATRIX_MODE   = 0x01000000,
-  /**< Flag to disable PCC Matrix mode         */
-
 } QDI_Panel_FlagsType;
 
 /** Defines the miscellaneous DSI flags used in QDI_Panel_DSIAttrType. There is one feature per bit.
@@ -1057,6 +1039,9 @@ typedef enum
 
   QDI_ADAPTIVE_BRIGHTNESS_FEATURE_CABL,
   /**< CABL.  */
+
+  QDI_ADAPTIVE_BRIGHTNESS_FEATURE_FOSS,
+  /**< FOSS.  */
 
   QDI_ADAPTIVE_BRIGHTNESS_FEATURE_MAX,
   /**< Enumeration marker for the maximum number of brightness features. */
@@ -1696,6 +1681,9 @@ typedef struct
   QDI_Panel_HdmiVendorAttrType            sHdmiVendorSpecificAttr;
   /**< HDMI vendor-specific attributes. */
 
+  QDI_Display_HDMI_AVIPacketPropType      sHdmiAVIPacketInfo; 
+  /**< HDMI AVI packet information. */
+
   uint32                                  uHDMIPixelClockFrequency;
   /**< HDMI pixel clock frequency. */
 
@@ -1712,27 +1700,6 @@ typedef struct
   /**< HDCP level to negotiate with sink. */
 
 }QDI_Panel_HdmiAttrType;
-
-
-/** Input in the OEMConfig_DisplayUtil_ReadCmdBuf() function when the DDC is read
-    for the HDMI display.
-*/
-typedef struct _QDI_Panel_HdmiReadPacketInfo
-{
-    uint32 uDDCAddress;
-    /**< DDC address for EDID, which is 0xA0. */
-
-    uint32 uSegmentAddress;
-    /**< DDC address for segment, which is 0x60. A segment contains multiple
-         blocks and is 256 bytes in size.*/
-
-    uint32 uOffset;
-    /**< Offset to read data from within a segment. The value must be 0 or 128. */
-
-    uint32 uSegmentNum;
-    /**< Segment number.*/
-
-}QDI_Panel_HdmiReadPacketInfo;
 
 
 /** Defines the DSI Tear Enable (TE) configuration.
@@ -2049,9 +2016,6 @@ typedef struct
     uint32                   uTransferRate;
     /**< Transfer rate based on the bitclock frequency, in Hz */
 
-    uint32                   uDmaScheduleLine;
-    /**< Line count for Scheduling DMA command */
-
 } QDI_Panel_DSIAttrType;
 
 
@@ -2180,6 +2144,40 @@ typedef struct
 
 } QDI_Panel_DitheringMatrixType;
 
+
+
+/** Panel gamma correction segment curve parameters.
+*/
+typedef struct
+{
+    bool32       bEnabled;   /**< Flag to indicate whether this segment is
+                                  enabled; currently not used. */
+    int32        start;      /**< Start position of the segment. */
+    int32        gain;       /**< Gain or slope of the segment. */
+    int32        offset;     /**< Offset of the segment. */
+} QDI_Panel_GammaCorrectionSegment;
+
+
+/** Panel gamma correction matrix for three color components.
+*/
+typedef struct
+{
+    QDI_Display_IDType                  eDisplayId;
+    /**< ID of the display to which this gamma correction is applied. */
+
+    bool32                              bEnabled;
+    /**< Flag to enable or disable panel gamma correction. */
+
+    QDI_Panel_GammaCorrectionSegment    sRedCr[QDI_PANEL_PGC_SEGMENTS];
+    /**< Panel gamma correction parameters for color 0. */
+
+    QDI_Panel_GammaCorrectionSegment    sGreenY[QDI_PANEL_PGC_SEGMENTS];
+    /**< Panel gamma correction parameters for color 1. */
+
+    QDI_Panel_GammaCorrectionSegment    sBlueCb[QDI_PANEL_PGC_SEGMENTS];
+    /**< Panel gamma correction parameters for color 2. @newpagetable */
+
+} QDI_Panel_GammaCorrectionTableType;
 
 /** Panel linear gamma correction table settings.
 */
@@ -2326,50 +2324,6 @@ typedef struct
     /**< Histogram data read from the histogram bins. @newpagetable */
 } QDI_Panel_HistogramDataType;
 
-/** Defines a generic allocated buffer for a panel.
-*/
-typedef struct
-{
-  uint32   uSize;
-  /**< Length of buffer in bytes */
-  uint8   *pBuffer;
-  /**< Pointer to buffer data */
-} QDI_Panel_AllocatedBufType;
-
-/** DP bonded mode configuration.
-*/
-typedef struct
-{
-    bool32  bEnabled;
-    /**< DP bonded mode enable */
-    uint32  uDeviceIDMapping[4];
-    /**< Mapping of DP Devices operating in bonded mode */
-    uint32  uNumDevices;
-    /**< Number of DP Devices operating in bonded mode */
-    uint32  uMasterClockDeviceID;
-    /**< Define the DP Device sourcing the resource for the shared master clock in bonded mode */
-    uint32  uMasterAUXDeviceID;
-    /**< Define the DP Device sourcing the resource for the shared master AUX in bonded mode */
-} QDI_DP_BondedModeInfoType;
-
-/** DP AUX Override mode.
-*/
-typedef enum {
-  QDI_DP_OVERRIDE_MODE_OFF = 0,  /**< Do not override any DP sections. */
-  QDI_DP_OVERRIDE_MODE_REPLACE,  /**< Override using provided buffers whether or not panel failed. */
-  QDI_DP_OVERRIDE_MODE_FALLBACK, /**< Override using provided buffers when panel fails. */
-  QDI_DP_OVERRIDE_MODE_MAX,
-  QDI_DP_OVERRIDE_MODE_FORCE_32BIT = 0x7FFFFFFF
-} QDI_DP_OverrideModeType;
-
-/** Defines the buffers for AUX override from ACPI.
-*/
-typedef struct
-{
-  QDI_Panel_AllocatedBufType sEDID;       /**< EDID buffer from ACPI */
-  QDI_Panel_AllocatedBufType sDPCDCaps;   /**< DPCD caps buffer from ACPI */
-  QDI_Panel_AllocatedBufType sDPCDStatus; /**< DPCD status buffer from ACPI */
-} QDI_DP_OverrideBufsType;
 
 /** eDP link training type.
 */
@@ -2382,6 +2336,69 @@ typedef enum {
   /**< Forces the enumeration to 32 bits. */
 
 } QDI_EdpLinkTrainingType;
+
+
+/** Configuration for the eDP interface coming from the panel configuration.
+*/
+typedef struct {
+  uint32                            uRefreshRate;
+  /**< eDP refresh rate in Q16.16 representation. */
+
+  uint32                            uPixelClockFrequency;
+  /**< Pixel clock frequency in Hertz. Used to override #uRefreshRate. */
+
+  uint32                            uNumberOfLanes;
+  /**< Number of eDP link lanes to use. */
+
+  QDI_EdpLinkTrainingType           eLinkTraining;
+  /**< Enables eDP link training. */
+
+  bool32                            bASSREnable;
+  /**< Enables an alternate scrambler seed reset. */
+
+  bool32                            bEnhancedFrameEnable;
+  /**< Enables an enhanced frame. */
+
+  uint32                            uMaxLinkRate;
+  /**< Maximum acceptable link rate. */
+
+  bool32                            bReadDPCD;
+  /**< Flag to read DPCD from the panel. */
+
+  bool32                            bReadEDID;
+  /**< Flag to read EDID from the panel. */
+
+  uint32                            uLinkRateInKhz;
+  /**< Link rate in kHz. */
+
+  bool32                            bHPDActiveLow;
+  /**< Indicates that a hot plug detected from the panel is active when the
+       signal is low. */ 
+
+  uint32                            uNumberofRefreshRates;
+  /**< Number of dynamic refresh rates. To be deprecated (retained for backward
+       compatibility with bluegdr).*/
+  
+   uint32                            aDynamicRefreshRates[QDI_PANEL_MAX_NUMBER_DYNAMIC_REFRESH_RATES];
+  /**< List of dynamic refresh rates for eDP. To be deprecated (retained for
+       backward compatibility with bluegdr). */
+
+  uint32                            uPowerupWaitinMs;
+  /**< Wait time between panel power up and auxiliary operation. */
+
+  uint32                            uMaxAuxRetry;
+  /**< Number of retries before auxiliary operation success. */
+
+  uint32                            uLaneSwingLevel;
+  /**< Lane voltage swing level. */
+
+  uint32                            uPreemphasisLevel;
+  /**< Lane pre-emphasis level. */
+
+  bool32                            bEnableSSCMode;
+  /**< Enables SSC mode. */
+
+} QDI_Panel_EDPAttrType;
 
 /** DP cable connection status.
 */
@@ -2470,49 +2487,6 @@ typedef enum
     /**< HPD IRQ notification */
 } QDI_DP_HPDNotificationType;
 
-/** DP Fixed lane mode configuration.
-    This enum configures the fixed lane configuration for the DP panels
-*/
-
-typedef enum
-{
-  QDI_DP_FIXED_LANE_CONFIG_DISABLED                = 0x00000000,
-  /**< Fixed lane configuration disabled */
-
-  QDI_DP_FIXED_LANE_DEFAULT_POLARITY               = 0x00000001,
-  /**< Fixed lane configuration with default connection polarity */
-
-  QDI_DP_FIXED_LANE_REVERSE_POLARITY               = 0x00000002,
-  /**< Fixed lane configuration with reverse connection polarity */
-
-  QDI_DP_FIXED_LANE_MULTIFUNCTION_DEFAULT_POLARITY = 0x00000003,
-  /**< Fixed lane configuration with default connection polarity in multifunction mode */
-
-  QDI_DP_FIXED_LANE_MULTIFUNCTION_REVERSE_POLARITY = 0x00000004,
-  /**< Fixed lane configuration with reverse connection polarity in multifunction mode */
-
-} QDI_DP_FixedLaneConfigType;
-
-/** DP PHY SSC mode configuration.
-    This enum configures the SSC for the DP panels
-*/
-
-typedef enum
-{
-  QDI_DP_SSC_DISABLED = 0x00000000,
-  /**< SSC disabled */
-
-  QDI_DP_SSC_ENABLED_DOWNSPREAD,
-  /**< SSC enabled with downspread */
-
-  QDI_DP_SSC_ENABLED_CENTERSPREAD,
-  /**< SSC enabled with centerspread */
-
-  QDI_DP_SSC_MAX
-  /**< Enumeration marker for the max. @newpage */
-
-} QDI_DP_PHY_SSCConfigType;
-
 /** Configuration for the DP interface coming from the panel configuration.
 */
 typedef struct {
@@ -2564,17 +2538,14 @@ typedef struct {
   uint32                            uMaxAuxRetry;
   /**< Number of retries before auxiliary operation success. */
 
-  uint32                            aPeSwOverrideConfigList[QDI_PANEL_DP_PESWLIST_MAX_NUM];
-  /**< DP interface's Pre-emphasis and Voltage swing over-ride configuration data */
-
   uint32                            uLaneSwingLevel;
   /**< Lane voltage swing level. */
 
   uint32                            uPreemphasisLevel;
   /**< Lane pre-emphasis level. */
 
-  QDI_DP_PHY_SSCConfigType          eSSCMode;
-  /**< Force enable/disable SSC flag. Default value is TRUE         */
+  bool32                            bEnableSSCMode;
+  /**< Enables SSC mode. */
 
   QDI_Panel_HdmiVendorAttrType      sExtVendorSpecificAttr;
   /**< DP EDID vendor-specific attributes. */
@@ -2605,21 +2576,6 @@ typedef struct {
 
   QDI_DP_DiagnosticLevelType        eDiagLevel;
   /**< Diagnostic level */
-
-  QDI_DP_BondedModeInfoType         sBondedModeConfig;
-  /**< DP bonded mode configuration info */
-
-  QDI_DP_OverrideBufsType           sOverrideBufs;
-  /**< DP AUX override buffers from ACPI */
-
-  QDI_DP_OverrideModeType           eOverrideMode;
-  /**< DP AUX override mode (off/fallback/override) */
-
-  uint32                            uMinEncLevel;
-  /**< min encryption level for which HDCP secure registers have been programmed*/
-
-  uint32                            uPsrTrainingDurationUs;
-  /**< eDP PSR training override duration in micro seconds **/
 } QDI_Panel_DPAttrType;
 
 /** @cond internal_only */
@@ -2765,20 +2721,143 @@ typedef struct
     /**< Length of the response table. */
 } QDI_Panel_ResponseTableType;
 
+/** @cond internal_only */
+/** FOSS configuration
+*     Configuration  for FOSS.
+*/
+typedef struct {
+  bool32   bEnabled;
+  /**< Enables FOSS on the device at boot up. \n
+       If TRUE, FOSS can be turned on or off dynamically during runtime. \n
+       If FALSE, FOSS remains constantly disabled. */
+
+  uint32   uOpMode;
+  /**< Operation Mode -- basic, contrast optimized, or contrast enhancement only. */
+
+  uint32   uContrastStrength;
+  /**< Contrast strength applied by FOSS. */
+
+  uint32   uLuxEndPoint;
+  /**< Ambient light level at which to disable FOSS.
+       FOSS automatically switches on if ambient light is lower than
+       uLuxEndPoint, and automatically switches it off if higher. */
+
+  uint32   uLutUpdateDelayCount;
+  /**< Adaptive LUT update delay count. */
+
+  bool32   bGradientDetection;
+  /**< Enables gradient detection */
+
+  uint32   uGradientThreshold;
+  /**< Gradient threshold (range: 0 -- 100).
+       If gradient detection is enabled and calculated gradient score exceeds 
+       the gradient threshold, FOSS processes the image to minimize the banding
+       effect. */
+
+  uint32   uStaticSceneThreshold;
+  /**< Static scene threshold (range: 0 -- 255).
+       Scene change score below this threshold will be considered as static scene. */
+
+  QDI_Panel_ResponseTableType sPowerProfileTable;
+  /**< Power profile of the current OLED panel. */
+
+  QDI_Panel_ResponseTableType sPowerSavingRatioTable;
+  /**< Power saving ratio slope. */
+
+  QDI_Panel_ResponseTableType sLutUpdateSpeedTable;
+  /**< Temporal speed slope. */
+
+} QDI_Panel_FOSSConfigType;
+/** @endcond */
+
+/** Configuration to dynamically activate or deactivate FOSS.
+*/
+typedef struct
+{
+  bool32                     bActivate;
+  /**< TRUE  -- Activate FOSS. /n
+       FALSE -- Deactivate FOSS. */
+} QDI_Panel_FOSSActivateType;
+
 
 /** AdaptiveBrightness
-*     Configuration for adaptive brightness feature CABL.
+*     Configuration for adaptive brightness features CABL and FOSS.
 */
 typedef struct
 {
   QDI_AdaptiveBrightnessFeatureType eFeature;
   /**< Adaptive brightness feature type. */
 
+  union
+  {
+    QDI_Panel_CABLConfigType sCABLConfig;
+    /**< CABL configuration. */
 
-  QDI_Panel_CABLConfigType sCABLConfig;
-  /**< CABL configuration. */
+    QDI_Panel_FOSSConfigType sFOSSConfig;
+    /**< FOSS configuration. @newpagetable */
+  } uConfig;
 
 } QDI_Panel_AdaptiveBrightnessType;
+
+/** Sunlight Visibility Improvement (SVI) configuration parameters. 
+*/
+typedef struct
+{
+  bool32   bEnabled;
+  /**< Enables SVI on the device at boot up.
+
+       If TRUE, SVI can be turned on or off dynamically 
+       during runtime. If FALSE, SVI remains constantly disabled. */
+
+  uint32   uContrastStrength;
+  /**< Contrast enhancement strength level. */
+
+  uint32   uBrightnessStrength;
+  /**< Brightness boosting strength level. */
+
+  uint32   uFilterStepSizeUIMode;
+  /**< Size of the SVI's incremental updates in UI mode. */
+
+  uint32   uFilterStepSizeVideoMode;
+  /**< Size of the SVI's incremental updates in video mode. */
+
+  QDI_Panel_ResponseTableType sSensorResponseTable;
+  /**< Sensor response table. */
+
+  QDI_Panel_ResponseTableType sBacklightResponseTable;
+  /**< Backlight response table. */
+
+  uint32   uPanelReflectanceRatio;
+  /**< Panel reflectance ratio. */
+
+  uint32   uPanelPeakBrightness;
+  /**< Display panel peak brightness. */
+
+  uint32   uIndoorMaxLuxLevel;
+  /**< Ambient light level during SVI's brightness calibration. */
+
+  uint32   uIndoorMaxBrightnessLevel;
+  /**< Brightness level chosen during SVI's brightness calibration. */
+  
+  uint32   uOutdoorMaxLuxLevel;
+  /**< Ambient light level for which SVI applies maximum boosting. */
+
+  uint32   uOutdoorMaxBrightnessLevel;
+  /**< Specifies the maximum ambient light based boosting applied by SVI. */
+
+  uint32   uLuxStartPoint;
+  /**< Ambient light level at which to enable SVI.
+
+       SVI automatically switches on if ambient light is higher than
+       uLuxEndPoint, and automatically switch off if it is lower. */
+
+  QDI_Panel_ResponseTableType sLutUpdateSpeedTable;
+  /**< Temporal speed slope. */
+
+  uint32   aPrivateData[8];
+  /**< Reserved for future use. */
+
+}QDI_Panel_SVIConfigType;
 
 
 /** Defines assertive display enhancement configuration, calibration, and 
@@ -2932,6 +3011,9 @@ typedef struct
     QDI_Panel_ADConfigType          sADConfig;
     /**< Assertive Display configuration */
 
+    QDI_Panel_SVIConfigType         sSVIConfig;
+    /**< SVI configuration */
+
 } QDI_Panel_ALEnhancementConfigType;
 
 
@@ -3033,22 +3115,7 @@ typedef struct {
   /**< Dynamic blanking adjustment configuration for this panel. */
 }QDI_Panel_DynamicRateCfgType;
 
-/*!
-* Defines the cached configuration for a metadata format on a QDI Display.
-*/
-typedef struct
-{
-  QDI_Display_MetadataActionType  eAction;
-  /**< Action to take on a metadata format */
-  QDI_Display_MetadataFormatType  eFormat;
-  /**< Format of metadata (HDR, proprietary) */
-  uint32                          uInterfaceId;
-  /**< Bitmask of the interface to send metadata on, bit 0 = intf 0, if zero, broadcast */
-  uint32                          uMetadataSize;
-  /**< Size of metadata in bytes  */
-  uint8                           aMetadata[QDI_PANEL_MAX_CACHED_METADATA_SIZE];
-  /**< Metadata buffer */
-} QDI_Panel_MetadataConfigType;
+
 
 /** Configuration params for brightness range
 */
@@ -3087,16 +3154,6 @@ typedef struct
        than maximum level of first range.*/
 
 }QDI_Panel_BrightnessConfigType;
-
-/** Defines the colorimetry-specific properties.
-*/
-typedef struct
-{
-  uint32                   uMinLuminance;       /**< Min Luminance of the panel in millinits (1/1000 of a nit). */
-  uint32                   uMaxLuminance;       /**< Max Luminance of the panel in millinits (1/1000 of a nit). */
-  uint32                   uMaxFrameLuminance;  /**< Maximum full frame average luminance of the panel in millinits (1/1000 of a nit). */
-  QDI_Color_EncodingType   eColorBlendSpace;    /**< Supported color space by the panel other than sRGB (sRGB is implicitly supported by the panel). */
-}QDI_Panel_ColorimetryConfigType;
 
 /** Defines the panelsync-specific settings.
 */
@@ -3170,9 +3227,6 @@ typedef struct
 {
   uint32                              uPanelId;
   /**< Unique panel identification ID. */
-
-  uint8                               uBridgeId;
-  /**< Bridge identification ID. */
   
   uint8                               cPanelName[QDI_PANEL_NAME_LENGTH];
   /**< Human readable panel name identifier. */
@@ -3235,7 +3289,8 @@ typedef struct
   {
     QDI_Panel_HdmiAttrType            sHdmi;  /**< HDMI configuration.            */
     QDI_Panel_DSIAttrType             sDsi;   /**< DSI configuration.             */
-    QDI_Panel_DPAttrType              sDp;    /**< DP/eDP/DP over USB-C configuration parameters.   */
+    QDI_Panel_EDPAttrType             sEdp;   /**< eDP configuration parameters.  */
+    QDI_Panel_DPAttrType              sDp;    /**< DP configuration parameters.   */
   } uAttrs;
 
   QDI_Panel_FlagsType                 eDisplayFlags;
@@ -3268,49 +3323,12 @@ typedef struct
   QDI_Panel_BrightnessConfigType      sBrightnessConfig;
   /**< Brightness configuration */
 
-  QDI_Panel_ColorimetryConfigType     sColorimetryConfig;
-  /**< Colorimetry configuration */
-
   QDI_Panel_SyncConfigType            sPanelSyncConfig;
   /**< Configurable parameters for panelsync */
 
   QDI_DSCConfigType                   sDSCConfig;
   /**< DSC configuration */
-
-  uint32                              uNumMetadataConfigs;
-  /**< Number of metadata configurations cached for a commit */
-
-  QDI_Panel_MetadataConfigType        aMetadataConfigs[QDI_PANEL_MAX_CACHED_METADATA_CONFIGURATIONS];
-  /**< Metadata configurations cached for a commit */
 } QDI_Panel_AttrType;
-
-
-/** Defines the availability of OEM panel correction via the gamma lookup table
-    and the color correction matrix.
-*/
-typedef struct
-{
-  bool32     bPanelCorrectionGC[QDI_DISPLAY_ID_MAX];
-  /**< Indicates whether panel gamma correction is supported. */
-
-  bool32     bPanelCorrectionCC[QDI_DISPLAY_ID_MAX];
-  /**< Indicates whether panel color correction is supported. @newpagetable */
-
-} QDI_Panel_CorrectionSupportType;
-
-
-/** Defines the default gamma curve to apply during inverse gamma correction
-    and gamma correction.
-*/
-typedef struct
-{
-  QDI_Color_EncodingType    eDefaultInverseGammaCorrection;
-  /**< Default inverse gamma correction curve to apply. */
-
-  QDI_Color_EncodingType    eDefaultGammaCorrection;
-  /**< Default gamma correction curve to apply. */
-
-} QDI_Panel_DefaultGammaCurveType;
 
 
 /** Display frame and scanline statistics.
@@ -3359,6 +3377,47 @@ typedef struct
 } QDI_Panel_CommitConfigType;
 
 
+
+/** FOSS Dynamic configuration
+*     For dynamic FOSS configuration  update.
+*/
+typedef struct
+{
+  uint32   uOpMode;
+  /**< Operation Mode: basic or contrast optimized */
+
+  uint32   uContrastStrength;
+  /**< Contrast strength applied by FOSS */
+
+  uint32   uLutUpdateDelayCount;
+  /**< Adaptive LUT update delay count */
+
+  bool32   bGradientDetection;
+  /**< Enables gradient detection. */
+
+  uint32   uGradientThreshold;
+  /**< Gradient threshold (range: 0 -- 100).
+  If gradient detection is enabled and the calculated gradient score exceeds
+  the gradient threshold, FOSS processes the image to minimize the banding
+  effect. */
+
+  uint32   uStaticSceneThreshold;
+  /**< Static scene threshold (range 0 -- 255).
+       Scene changes scored below this threshold are handled as static scene. */
+
+} QDI_Panel_FOSSDynamicConfigType;
+
+
+/** Returns the current FOSS processing information.
+*/
+typedef struct
+{
+  uint64                     uInfoPart1;
+  /**< Reserved for future use. */
+  uint64                     uInfoPart2;
+  /**< Reserved for future use. */
+} QDI_Panel_FossProcessingInfoType;
+
 /** Configuration used to dynamically enable or disable the Ambient Light (AL)
     Enhancement feature.
 */
@@ -3374,6 +3433,50 @@ typedef struct
 
 } QDI_Panel_ALEnhancementEnable;
 
+/** Ambient Light Enhancement-SVI Data Configuration used to dynamically modify
+    the SVI response.
+*/
+typedef struct
+{
+
+  uint32                     uBrightnessStrength;
+  /**< Strength of SVI brightness boosting. A value of 0 represents the minimum
+       brightness enhancement and 256 represents the maximum.*/
+
+  uint32                     uContrastStrength;
+  /**< Strength of SVI contrast boosting. A value of 0 represents the 
+       minimum contrast enhancement and a value of 256 represents the maximum.*/
+
+  uint32                     uFilterStepSizeUIMode;
+  /**< SVI transition speed during UI display. A value of 1
+       represents the slowest speed and 16 represents the fastest. */
+
+  uint32                     uFilterStepSizeVideoMode;
+  /**< SVI transition speed during video playback. 
+       The range is 1 through 16. A value of 1 represents the slowest
+       speed and 16 represents the fastest. */
+
+  uint32                     IndoorMaxBrightnessLevel;
+  /**< Controls the SVI response to ambient light input.
+       The range for this value is 0 through 256. A value of 0
+       represents minimal boosting is applied and 256 represents
+       maximum boosting. */
+     
+  uint32                     uOutdoorMaxLuxLevel;
+  /**< Ambient light level for which SVI applies maximum boosting. */
+
+  uint32                     uOutdoorMaxBrightnessLevel;
+  /**< Specifies the maximum ambient light based boosting applied by SVI. */
+} QDI_Panel_ALESviDynamicConfigType;
+
+/** Returns the current SVI processing information.
+*/
+typedef struct
+{
+  uint64                     uSviProcessingInfo;
+  /**< Reserved for future use. @newpagetable
+  */
+} QDI_Panel_ALESviProcessingInfoType;
 
 /** Configuration to dynamically modify calibration data of the AL Enhancement
     feature.
@@ -3407,6 +3510,97 @@ typedef struct
 
 }
 QDI_Panel_ALEnhancementCalibrationType;
+
+
+/** Properties to set the tone adjustment.
+ */
+typedef struct
+{
+  bool32           bEnable;                     
+  /**< Enable or disable the tone adjustment. */
+
+  uint32           uHueMax;                     
+  /**< Region definition for maximum hue tone adjustment. */
+
+  uint32           uHueMin;                     
+  /**< Region definition for minimum hue tone adjustment. */
+
+  uint32           uSaturationMax;              
+  /**< Region definition for maximum saturation tone adjustment. */
+
+  uint32           uSaturationMin;              
+  /**< Region definition for minimum saturation tone adjustment. */
+
+  uint32           uValueMax;                   
+  /**< Region definition for maximum value tone adjustment. */
+
+  uint32           uValueMin;                   
+  /**< Region definition for minimum value tone adjustment. */
+
+  int32            iHueGain;                    
+  /**< Hue gain for the tone adjustment -- defines the slope of the two sides of 
+       a symmetrical trapezoidal curve. */
+
+  uint32           uHueMid;                     
+  /**< Offset from the minimum that marks the top two corners of the 
+       trapezoid. */
+
+  int32            iValueGain;                  
+  /**< Value gain for the tone adjustment -- defines the slope of the two sides
+       of a symmetrical trapezoid. */
+
+  int32            iSaturationGain;             
+  /**< Saturation gain for the tone adjustment -- defines the slope of the two
+       sides of the symmetrical trapezoid. @newpagetable */
+
+} QDI_Panel_PA_MemoryColorConfigType;
+
+
+/** Properties used to configure the piece-wise linear (PWL) curve for six-zone
+    color adjustment.
+ */
+typedef struct
+{
+  int32            iHue;
+  /**< Adjustment value in hue for a six-zone color LUT. */
+
+  int32            iValue;
+  /**< Adjustment value for six-zone color LUT. */
+
+  int32            iSaturation;
+  /**< Adjustment value in saturation for the six-zone color LUT. */
+
+} QDI_Panel_PA_SixZonePwlType;
+
+
+/** Properties used to set six-zone color adjustment and saturation.
+ */
+typedef struct
+{
+  bool32                      bHueEnable;                                
+  /**< Enable/disable hue for six-zone adjustment. */
+
+  bool32                      bValueEnable;                              
+ /**< Enable/disable value for six-zone adjustment. */
+
+  bool32                      bSaturationEnable;                         
+  /**< Enable/disable saturation for six-zone adjustment. */
+
+  uint32                      uSaturationMin;
+  /**< Minimum saturation threshold to qualify the adjustment. */
+
+  uint32                      uValueMin;
+  /**< Minimum value threshold to qualify the adjustment. */
+
+  uint32                      uValueMax;
+  /**< Maximum value threshold to qualify the adjustment. */
+
+  QDI_Panel_PA_SixZonePwlType sPwl[QDI_PANEL_SIX_ZONE_LUT_MAX_ENTRIES];
+  /**< PWL for six-zone adjustment. */
+
+} QDI_Panel_PA_SixZoneColorConfigType;
+
+
 
 /** Properties for backlight control.
  */
@@ -3610,6 +3804,12 @@ typedef struct
          the dithering matrix (4x4) within the display pipe. \n
          (IRQL = Passive) */
     
+    QDI_Panel_GammaCorrectionTableType         *pGammaCorrectionTbl;
+    /**< Pointer to the panel gamma correction table. \n
+         Enables programming the gamma correction tables within the display pipe.
+         \n
+         (IRQL = Passive) */
+
     QDI_Panel_LinearGammaCorrectionTableType   *pLinearGammaCorrectionTbl;
     /**< Pointer to the panel linear gamma correction table. Enables programming
     the linear gamma correction tables within the display pipe. \n
@@ -3677,6 +3877,14 @@ typedef struct
     QDI_Panel_CABLActivateType                 *pCABLActivate;
     /**< Pointer to activate or deactivate the CABL feature. */
 
+    QDI_Panel_FOSSActivateType                 *pFOSSActivate;
+    /**< Pointer to activate or deactivate the FOSS feature. */
+
+    QDI_Panel_FOSSDynamicConfigType            *pFOSSDynamicConfig;
+    /**< Pointer to the dynamic configuration structure for FOSS. Use when
+         calling the QDI_DisplayUtil_SetProperty() function to update the FOSS
+         response. */
+
     uint32                                     *pAmbientLightLevel;
     /**< Value representing the amount of ambient light, in lux, sent to the QDI
          driver. This value should be the ambient light level from the
@@ -3689,6 +3897,10 @@ typedef struct
     QDI_Panel_ALEnhancementCalibrationType     *pALEnhancementCalibration;
     /**< Pointer to the AL Enhancement calibration configuration. Allows the OEM
          to modify the AL Enhancement calibration. */    
+
+    QDI_Panel_ALESviDynamicConfigType          *pALESviDynamicConfig;
+    /**< Pointer to the dynamic configuration structure for SVI. Use when
+         calling the QDI_DisplayUtil_SetProperty function to update the SVI response. */
 
     QDI_Panel_BacklightControlType             *pBacklightControl;
     /**< Pointer to the backlight control structure. Enables direct control of
@@ -3777,6 +3989,12 @@ typedef struct
 
     QDI_Panel_DisplayPrivateInfo         *pPrivateInfo;
     /**< Pointer to driver private information. */
+
+    QDI_Panel_ALESviProcessingInfoType   *pALESviProcessingInfo;
+    /**< Pointer to the SVI's processing information. */
+
+    QDI_Panel_FossProcessingInfoType     *pFOSSProcessingInfo;
+    /**< Pointer to the FOSS's processing information. */
 
     QDI_Panel_CablProcessingInfoType     *pCablProcessingInfo;
     /**< Pointer to the CABL's processing information. */
@@ -4337,6 +4555,41 @@ typedef struct
      uint32                   uHeight,
      uint32                   uStride,
      uint32                   uFlags);
+
+   /* FUNCTION: QDI_DisplayUtil_SetColorCorrectionInfo */
+   /** @ingroup display_func_set_color_correct
+
+     @deprecated See QDI_Panel_FunctionTableType::QDI_Panel_GetPropertyConfig().
+     
+     Used to dynamically set the panel color correction settings, including
+     the color correction matrix, gamma correction table, and inverse gamma
+     correction table. A NULL pointer means there are no changes to the
+     corresponding settings.
+
+     @datatypes
+     #QDI_Panel_ColorCorrectionMatrixType \n
+     #QDI_Panel_GammaCorrectionTableType \n
+     #QDI_Panel_InverseGammaCorrectionTableType
+
+     @param[in] eDisplayId  Display ID to which to send the packet.
+     @param[in] pColorInfo  Pointer to the panel-specific color correction
+                            matrix.
+     @param[in] pToneInfo   Pointer to the panel-specific gamma correction
+                            table.
+     @param[in] pIgcInfo    Pointer to the panel-specific inverse gamma
+                            correction table.
+
+     @return
+     QDI_STATUS_OK -- On success.
+
+     @dependencies
+     None.
+   */  
+   QDI_ErrorType (*QDI_DisplayUtil_SetColorCorrectionInfo)(
+     QDI_Display_IDType                          eDisplayId,
+     QDI_Panel_ColorCorrectionMatrixType         *pColorInfo,
+     QDI_Panel_GammaCorrectionTableType          *pToneInfo,
+     QDI_Panel_InverseGammaCorrectionTableType   *pIgcInfo);  
 
     /* FUNCTION: QDI_DisplayUtil_ResetDisplay     */
     /** @ingroup display_func_reset_display
