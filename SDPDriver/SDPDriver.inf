@@ -1,0 +1,75 @@
+;/*++
+;
+;Module Name:
+;    surfacepanel.INF
+;
+;Abstract:
+;    INF file for installing the OEM Class Extension Driver
+;
+;Installation Notes: 
+;    Using Devcon: Type "devcon update sdpdriver.inf ACPI\MSHW0160" to install
+;
+;--*/
+
+[Version]
+Signature   = "$Windows NT$"
+Class       = System
+ClassGuid   = {4d36e97d-e325-11ce-bfc1-08002be10318}
+Provider    = %Manufacturer_Name%
+DriverVer   = 
+CatalogFile = SDPDriver.cat
+PnpLockdown = 1
+
+[SourceDisksNames]
+1 = %Installation_Disk%,,, ""
+
+[SourceDisksFiles]
+SDPDriver.sys = 1,,
+
+;13 == Windows\System32\DriverStore
+[DestinationDirs]
+DefaultDestDir = 13
+
+[ControlFlags]
+ExcludeFromSelect = *
+
+;*****************************************
+; oem panel client driver Install Section
+;*****************************************
+
+[Manufacturer]
+%Manufacturer_Name% = CompanyName, NT$ARCH$.10.0...19041
+
+[CompanyName.NT$ARCH$.10.0...19041]
+%OEM.DeviceDesc% = OEM_Inst, ACPI\MSHW0160
+
+[OEM_Inst.NT]
+Copyfiles = OEMCopyFiles
+
+[OEMCopyFiles]
+SDPDriver.sys
+SDPDriverTi.sys
+
+[OEM_Inst.NT.Services]
+AddService = SurfacePanel, %SPSVCINST_ASSOCSERVICE%, OEM_Service_Inst
+
+[OEM_Service_Inst]
+DisplayName    = %OEM.SvcDesc%
+ServiceType    = %SERVICE_KERNEL_DRIVER%
+StartType      = %SERVICE_DEMAND_START%
+ErrorControl   = %SERVICE_ERROR_NORMAL%
+ServiceBinary  = %13%\SDPDriver.sys
+LoadOrderGroup = Extended Base
+
+[Strings]
+;Localizable Strings
+Manufacturer_Name = "Surface"
+Installation_Disk = "Surface Display Panel Installation Disk"
+OEM.SvcDesc       = "Surface Display Panel Device"
+OEM.DeviceDesc    = "Surface Display Panel Device"
+
+;Non-Localizable Strings
+SPSVCINST_ASSOCSERVICE = 0x00000002
+SERVICE_KERNEL_DRIVER  = 1
+SERVICE_DEMAND_START   = 3
+SERVICE_ERROR_NORMAL   = 1
