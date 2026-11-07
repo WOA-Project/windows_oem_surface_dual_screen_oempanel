@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|ARM64">
@@ -10,90 +10,98 @@
       <Platform>ARM64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7C1D3E52-9A64-4B0F-8E27-5F3A1B9D6C48}</ProjectGuid>
+    <RootNamespace>SDPDriver</RootNamespace>
+    <WindowsTargetPlatformVersion>$(LatestTargetPlatformVersion)</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <TargetVersion>Windows10</TargetVersion>
+    <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
+    <ConfigurationType>Driver</ConfigurationType>
+    <DriverType>KMDF</DriverType>
+    <DriverTargetPlatform>Desktop</DriverTargetPlatform>
+    <Driver_SpectreMitigation>Spectre</Driver_SpectreMitigation>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup>
+    <TargetName>SDPDriver</TargetName>
+    <LinkIncremental>false</LinkIncremental>
+    <!-- Build output can be redirected with /p:OutDir=... /p:IntDir=... -->
+    <OutDir>.\build\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>.\build\$(Platform)\$(Configuration)\obj\</IntDir>
+    <!-- No signing certificate is needed for a build check; override with /p:SignMode=TestSign. -->
+    <SignMode Condition="'$(SignMode)'==''">Off</SignMode>
+    <EnableInf2cat Condition="'$(EnableInf2cat)'==''">false</EnableInf2cat>
+    <MessageCompiler Condition="'$(MessageCompiler)'==''">$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x86\mc.exe</MessageCompiler>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <WppEnabled>true</WppEnabled>
+      <WppScanConfigurationData>Trace.h</WppScanConfigurationData>
+      <WppKernelMode>true</WppKernelMode>
+    </ClCompile>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>%(AdditionalDependencies);ntstrsafe.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Acpi.c" />
+    <ClCompile Include="ActionDispatch.c" />
+    <ClCompile Include="ActionQueue.c" />
+    <ClCompile Include="Calibration.c" />
     <ClCompile Include="Device.c" />
-    <ClCompile Include="DisplayProxy.c" />
     <ClCompile Include="Driver.c" />
+    <ClCompile Include="ErrorLog.c" />
+    <ClCompile Include="Esd.c" />
+    <ClCompile Include="Gpio.c" />
+    <ClCompile Include="PanelBin.c" />
+    <ClCompile Include="PanelConfig.c" />
+    <ClCompile Include="PanelIoctl.c" />
+    <ClCompile Include="PanelOps.c" />
+    <ClCompile Include="PanelSequence.c" />
+    <ClCompile Include="PanelSequences.c" />
+    <ClCompile Include="PanelTables.c" />
+    <ClCompile Include="qdcm.c" />
+    <ClCompile Include="QdiPanel.c" />
     <ClCompile Include="Queue.c" />
+    <ClCompile Include="sfpd.c" />
+    <ClCompile Include="Thread.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Device.h" />
-    <ClInclude Include="Driver.h" />
-    <ClInclude Include="oempanel.h" />
-    <ClInclude Include="qdi_oem.h" />
-    <ClInclude Include="qdi_types.h" />
-    <ClInclude Include="Queue.h" />
+    <ClInclude Include="SdpDriver.h" />
+    <ClInclude Include="SdpPublic.h" />
     <ClInclude Include="Trace.h" />
   </ItemGroup>
   <ItemGroup>
-    <Inf Include="SDPDriver.inf" />
+    <!-- Message table resource: SdpMessages.h / SdpMessages.rc / MSG00409.bin are generated into $(IntDir). -->
+    <ResourceCompile Include="SDPDriver.rc" />
+    <None Include="SDPDriver.mc" />
   </ItemGroup>
-  <PropertyGroup Label="Globals">
-    <ProjectGuid>{B12C10A5-00FE-4E0B-90AE-A425D4F2675A}</ProjectGuid>
-    <TemplateGuid>{497e31cb-056b-4f31-abb8-447fd55ee5a5}</TemplateGuid>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <MinimumVisualStudioVersion>12.0</MinimumVisualStudioVersion>
-    <Configuration>Debug</Configuration>
-    <Platform Condition="'$(Platform)' == ''">Win32</Platform>
-    <RootNamespace>SDPDriver</RootNamespace>
-  </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="Configuration">
-    <TargetVersion>Windows10</TargetVersion>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
-    <ConfigurationType>Driver</ConfigurationType>
-    <DriverType>KMDF</DriverType>
-    <DriverTargetPlatform>Universal</DriverTargetPlatform>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="Configuration">
-    <TargetVersion>Windows10</TargetVersion>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
-    <ConfigurationType>Driver</ConfigurationType>
-    <DriverType>KMDF</DriverType>
-    <DriverTargetPlatform>Universal</DriverTargetPlatform>
-  </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
-    <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
-    <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
-  </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
-    <ClCompile>
-      <WppEnabled>true</WppEnabled>
-      <WppRecorderEnabled>true</WppRecorderEnabled>
-      <WppScanConfigurationData Condition="'%(ClCompile.ScanConfigurationData)' == ''">trace.h</WppScanConfigurationData>
-      <WppKernelMode>true</WppKernelMode>
-    </ClCompile>
-    <DriverSign>
-      <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
-    </DriverSign>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
-    <ClCompile>
-      <WppEnabled>true</WppEnabled>
-      <WppRecorderEnabled>true</WppRecorderEnabled>
-      <WppScanConfigurationData Condition="'%(ClCompile.ScanConfigurationData)' == ''">trace.h</WppScanConfigurationData>
-      <WppKernelMode>true</WppKernelMode>
-    </ClCompile>
-    <DriverSign>
-      <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
-    </DriverSign>
-  </ItemDefinitionGroup>
   <ItemGroup>
+    <!-- Driver projects do not add their own binary to the package that Inf2Cat catalogs. -->
     <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
+  <ItemGroup>
+    <Inf Include="SDPDriver.inx" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
+  <!-- mc.exe has to run before the first source includes SdpMessages.h and before rc.exe reads MSG00409.bin. -->
+  <Target Name="SdpMessageCompile" BeforeTargets="ClCompile;ResourceCompile;WppTracing" Inputs="SDPDriver.mc" Outputs="$(IntDir)SdpMessages.h;$(IntDir)SdpMessages.rc;$(IntDir)MSG00409.bin">
+    <MakeDir Directories="$(IntDir)" />
+    <Exec Command="&quot;$(MessageCompiler)&quot; -h &quot;$(IntDir.TrimEnd('\'))&quot; -r &quot;$(IntDir.TrimEnd('\'))&quot; -z SdpMessages &quot;$(MSBuildProjectDirectory)\SDPDriver.mc&quot;" />
+  </Target>
 </Project>

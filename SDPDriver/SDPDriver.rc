@@ -1,0 +1,6 @@
+// Resources of SDPDriver.sys. Carries exactly one resource:
+// the RT_MESSAGETABLE (type 11, id 1, language 0x409) with the four event log
+// messages 0xC0010001..0xC0010004. It has no VERSIONINFO, manifest or icon.
+// SdpMessages.rc and MSG00409.bin are generated from SDPDriver.mc by mc.exe.
+
+#include "SdpMessages.rc"
