@@ -85,8 +85,9 @@ FillMeta2Ev3PanelInitSequence(
 {
     UNREFERENCED_PARAMETER(DisplayId);
 
-    static const UCHAR softReset[2] = {0x01, 0x00};
-    static const UCHAR brightnessZero[3] = {0x51, 0x00, 0x00};
+    static const UCHAR sleepOut[2] = {0x11, 0x00};
+    //static const UCHAR softReset[2] = {0x01, 0x00};
+    //static const UCHAR brightnessZero[3] = {0x51, 0x00, 0x00};
     //static const UCHAR cmd5C[3] = {0x5C, 0x1F, 0x00};
     //static const UCHAR cmd5E[2] = {0x5E, 0x10};
 
@@ -120,10 +121,11 @@ FillMeta2Ev3PanelInitSequence(
         TraceEvents(TRACE_LEVEL_ERROR, TRACE_PANEL, "Panel bin missing or wrong size (%u)", PanelBinSize);
     }
 
-    NTSTATUS status = AppendCommand(Head, SDP_DSI_NODE_WRITE, SDP_DSI_DT_DCS_SHORT_WRITE_0, 2, (PUCHAR)softReset, 2, TRUE);
-    status |= AppendDelay(Head, 1, TRUE);
-    status |= AppendCommand(Head, SDP_DSI_NODE_WRITE, SDP_DSI_DT_DCS_LONG_WRITE, 2, (PUCHAR)brightnessZero, 3, TRUE);
-    status |= AppendSleepCommand(Head, 0x11, TRUE);      // sleep out
+    //NTSTATUS status = AppendCommand(Head, SDP_DSI_NODE_WRITE, SDP_DSI_DT_DCS_SHORT_WRITE_0, 2, (PUCHAR)softReset, 2, TRUE);
+    //status |= AppendDelay(Head, 1, TRUE);
+    //status |= AppendCommand(Head, SDP_DSI_NODE_WRITE, SDP_DSI_DT_DCS_LONG_WRITE, 2, (PUCHAR)brightnessZero, 3, TRUE);
+    //status |= AppendSleepCommand(Head, 0x11, TRUE);      // sleep out
+    NTSTATUS status = AppendCommand(Head, SDP_DSI_NODE_WRITE, 0x07, 2, (PUCHAR)sleepOut, sizeof(sleepOut), TRUE);      // sleep out
     status |= AppendDelay(Head, 0x10, TRUE);
     status |= AppendCommand(Head, SDP_DSI_NODE_WRITE, 0x0A, 2, (PUCHAR)g_SW3416_DscPps, sizeof(g_SW3416_DscPps), TRUE);
     status |= AppendDelay(Head, 0x10, TRUE);
@@ -141,6 +143,7 @@ FillMeta2Ev3PanelInitSequence(
 
     status |= AppendTESetScanLineCommand(Head, 1000, TRUE);
     status |= AppendTECommand(Head, 0x35, TRUE);
+    //TODO: Send? 39 51 01 47 (Brightness default)
     //status |= AppendCommand(Head, SDP_DSI_NODE_WRITE, SDP_DSI_DT_DCS_LONG_WRITE, 2, (PUCHAR)cmd5C, sizeof(cmd5C), TRUE);
     status |= ADD(Head, SDP_DSI_DT_DCS_LONG_WRITE, g_SW3416_DsiCmd53A, TRUE);
     status |= ADD(Head, SDP_DSI_DT_DCS_LONG_WRITE, g_SW3416_DsiCmd55, TRUE);

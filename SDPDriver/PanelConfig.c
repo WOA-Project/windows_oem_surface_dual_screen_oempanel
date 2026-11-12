@@ -177,7 +177,7 @@ FillMeta2PanelProperties(_In_ PPANEL_CONTEXT Panel)
     info->DscMinorVersion = 1;
     info->DscScrVersion = 0;
     info->BitClockOverride = 1;
-    info->BitClockFrequency = 412000000;
+    info->BitClockFrequency = 500000000;
     info->BitClkScaleOverride = 0;
     info->BitClkScalePercent = 10;
 
@@ -203,7 +203,7 @@ FillMeta2PanelProperties(_In_ PPANEL_CONTEXT Panel)
     info->VsyncStartPos = 2;
     info->VsyncContinueLines = 4000;
     info->VsyncStartLineDivisor = 4;
-    info->VsyncPercentVariance = 0xA0000;
+    info->VsyncPercentVariance = 0x630000;
     RtlZeroMemory(info->Reserved88, sizeof(info->Reserved88));
     info->ClockHsForceRequest = QDI_DSI_ClockLane_ForceHS;
     info->Reserved1[0] = 0x28;
