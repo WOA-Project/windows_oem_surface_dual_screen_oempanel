@@ -141,7 +141,7 @@ FillMeta2Ev3PanelInitSequence(
     status |= ADD(Head, SDP_DSI_DT_DCS_LONG_WRITE, g_SW3416_DsiCmd2B, TRUE);
     status |= ADD(Head, SDP_DSI_DT_DCS_SHORT_WRITE_1, g_SW3416_DsiGammaSet, TRUE);
 
-    status |= AppendTESetScanLineCommand(Head, 1000, TRUE);
+    status |= AppendTESetScanLineCommand(Head, 900, TRUE);
     status |= AppendTECommand(Head, 0x35, TRUE);
     //TODO: Send? 39 51 01 47 (Brightness default)
     //status |= AppendCommand(Head, SDP_DSI_NODE_WRITE, SDP_DSI_DT_DCS_LONG_WRITE, 2, (PUCHAR)cmd5C, sizeof(cmd5C), TRUE);
@@ -300,7 +300,8 @@ FillMetaEnableQSyncExtTrigSequence(_Inout_ SDP_DSI_NODE* Head, _In_ BOOLEAN Seco
     //UCHAR cmd5A00[2] = {0x5A, 0x00};
     //UCHAR cmd5CC2[3] = {0x5C, 0xC2, 0x01};
     //UCHAR scanline1000[3] = {0x44, 0x03, 0xE8};
-    //UCHAR scanline0[3] = {0x44, 0x00, 0x00};
+    UCHAR scanline900[3] = {0x44, 0x03, 0x84};
+    UCHAR scanline0[3] = {0x44, 0x00, 0x00};
     NTSTATUS status;
 
     if (Head == NULL)
@@ -312,12 +313,13 @@ FillMetaEnableQSyncExtTrigSequence(_Inout_ SDP_DSI_NODE* Head, _In_ BOOLEAN Seco
 
     if (!Second)
     {
-        //status = ADD(Head, SDP_DSI_DT_DCS_LONG_WRITE, scanline0, FALSE);
+        status = ADD(Head, SDP_DSI_DT_DCS_LONG_WRITE, scanline0, FALSE);
         //status |= ADD(Head, SDP_DSI_DT_DCS_LONG_WRITE, cmd5CC2, FALSE);
         //status |= ADD(Head, SDP_DSI_DT_DCS_SHORT_WRITE_1, cmd5A05, FALSE);
     }
     else
     {
+        status = ADD(Head, SDP_DSI_DT_DCS_LONG_WRITE, scanline900, FALSE);
         //status = ADD(Head, SDP_DSI_DT_DCS_LONG_WRITE, scanline1000, FALSE);
         //status |= ADD(Head, SDP_DSI_DT_DCS_SHORT_WRITE_1, cmd5A00, FALSE);
     }
@@ -358,8 +360,8 @@ FillMetaGetGuid(_Inout_ SDP_DSI_NODE* Head)
 NTSTATUS
 FillMetaPanelGetId(_Inout_ SDP_DSI_NODE* Head)
 {
-    //UCHAR setSize[2] = {8, 0};
-    //UCHAR restoreSize[2] = {1, 0};
+    UCHAR setSize[2] = {8, 0};
+    UCHAR restoreSize[2] = {1, 0};
     UCHAR readA1[2] = {0xA1, 0x00};
     UCHAR readA8[2] = {0xA8, 0x00};
     //UCHAR selectPage[4] = {0xB2, 0x5D, 0x41, 0x02};
@@ -369,8 +371,7 @@ FillMetaPanelGetId(_Inout_ SDP_DSI_NODE* Head)
         return STATUS_INVALID_PARAMETER;
     }
 
-    NTSTATUS status = STATUS_SUCCESS;
-    //NTSTATUS status = AppendCommand(Head, SDP_DSI_NODE_WRITE, SDP_DSI_DT_SET_MAX_RETURN_SIZE, 2, setSize, 2, FALSE);
+    NTSTATUS status = AppendCommand(Head, SDP_DSI_NODE_WRITE, SDP_DSI_DT_SET_MAX_RETURN_SIZE, 2, setSize, 2, FALSE);
     //status |= ADD(Head, SDP_DSI_DT_DCS_LONG_WRITE, g_DsiUnlockB0, FALSE);
     //status |= AppendCommand(Head, SDP_DSI_NODE_WRITE, SDP_DSI_DT_DCS_LONG_WRITE, 2, selectPage, sizeof(selectPage), FALSE);
     status |= AppendCommand(Head, SDP_DSI_NODE_READ, SDP_DSI_DT_DCS_READ_0, 2, readA1, 2, FALSE);
@@ -378,7 +379,7 @@ FillMetaPanelGetId(_Inout_ SDP_DSI_NODE* Head)
     {
         status |= AppendCommand(Head, SDP_DSI_NODE_READ, SDP_DSI_DT_DCS_READ_0, 2, readA8, 2, FALSE);
     }
-    //status |= AppendCommand(Head, SDP_DSI_NODE_WRITE, SDP_DSI_DT_SET_MAX_RETURN_SIZE, 2, restoreSize, 2, FALSE);
+    status |= AppendCommand(Head, SDP_DSI_NODE_WRITE, SDP_DSI_DT_SET_MAX_RETURN_SIZE, 2, restoreSize, 2, FALSE);
     return status;
 }
 
@@ -404,14 +405,15 @@ SdpSeqBuildTemperatureCompensation(_Inout_ SDP_DSI_NODE* Head, _In_ const UCHAR*
     UCHAR data[0x12];
 
     RtlZeroMemory(data, sizeof(data));
-    //data[0] = 0xE9;
+    data[0] = 0xE9;
     RtlCopyMemory(&data[3], ColorCompensation, 10);
-    //RtlFillMemory(&data[13], 5, 0x32);
+    RtlFillMemory(&data[13], 5, 0x32);
 
-    NTSTATUS status = STATUS_SUCCESS;
+    NTSTATUS status = ADD(Head, SDP_DSI_DT_DCS_SHORT_WRITE_1, g_SW3416_DsiUnlockMCS, TRUE);
     //NTSTATUS status = ADD(Head, SDP_DSI_DT_DCS_LONG_WRITE, g_DsiUnlockBankB0, FALSE);
     //status |= ADD(Head, SDP_DSI_DT_DCS_LONG_WRITE, g_DsiUnlockB0, FALSE);
     status |= AppendDelay(Head, 0x78, TRUE);
-    //status |= AppendCommand(Head, SDP_DSI_NODE_WRITE, SDP_DSI_DT_DCS_LONG_WRITE, 2, data, sizeof(data), FALSE);
+    status |= AppendCommand(Head, SDP_DSI_NODE_WRITE, SDP_DSI_DT_DCS_LONG_WRITE, 2, data, sizeof(data), FALSE);
+    status |= ADD(Head, SDP_DSI_DT_DCS_SHORT_WRITE_1, g_SW3416_DsiLockMCS, TRUE);
     return status;
 }

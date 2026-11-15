@@ -97,19 +97,19 @@ VOID
 FillBrightnessSpecificSettings(_Out_ QDI_Panel_BrightnessConfigType* Config)
 {
     static const QDI_Panel_BrightnessConfigType defaults = {
-        0x85259,    // uMaxLuminance
+        545369,    // uMaxLuminance
         10000,      // uMinLuminance
         9,          // uNumRanges
         {
-            {10000, 18000, 100, 0},
-            {0x46B4, 0xAF58, 0xB5, 0},
-            {45000, 0x15E94, 0x1C4, 0},
-            {0x15F90, 0x248E2, 0x389, 0},
-            {0x249F0, 0x35916, 0x5E5, 0},
-            {0x35B60, 0x492DC, 0x8A7, 0},
-            {0x493E0, 0x63CD8, 0xBCE, 1},
-            {0x64190, 0x7945A, 0x1022, 1},
-            {0x7A120, 0x85259, 0x13B1, 1},
+            {10000,  18000,  100,  0},
+            {18100,  44888,  181,  0},
+            {45000,  89748,  452,  0},
+            {282624, 149730, 905,  0},
+            {150000, 219414, 1509, 0},
+            {220000, 299740, 2215, 0},
+            {300000, 408792, 3022, 1},
+            {410000, 496730, 4130, 1},
+            {500000, 545369, 5041, 1},
         },
     };
 
